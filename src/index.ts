@@ -53,12 +53,15 @@ export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContex
         "jobSalary>=3000",
     );
 
-    axios.post(searchHost.toString(), {
+    const searchBody = {
         requests: [{
             indexName: "vnw_job_v2_35",
             params: qs.stringify(searchParams),
         }],
-    }).then(handleSearchResult)
+    };
+
+    axios.post(searchHost.toString(), searchBody)
+        .then(handleSearchResult)
         .then(() => callback(null, "success"))
         .catch((error) => {
             console.error(error);
