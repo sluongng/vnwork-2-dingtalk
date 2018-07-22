@@ -8,7 +8,7 @@ export abstract class DingtalkMessage {
     }
 }
 
-export abstract class DingtalkAtMessage extends DingtalkMessage {
+abstract class DingtalkAtMessage extends DingtalkMessage {
 
     public at: {
         atMobiles: string[];

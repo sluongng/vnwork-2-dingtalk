@@ -32,6 +32,74 @@ export class AlgoliaSearchParams {
     }
 }
 
+export class AlgoliaSearchParamsBuilder {
+    public query: string;
+    public hitsPerPage: number;
+    public maxValuesPerFacet: number;
+    public page: number;
+    public facets: string[];
+    public tagFilters: string;
+    public facetFilters: Array<string | string[]>;
+    public filters: string;
+
+    constructor(query?: string) {
+        this.query = query;
+    }
+
+    public setQuery(query: string) {
+        this.query = query;
+        return this;
+    }
+
+    public setHitsPerPage(hitsPerPage: number) {
+        this.hitsPerPage = hitsPerPage;
+        return this;
+    }
+
+    public setMaxValuesPerFacet(maxValuesPerFacet: number) {
+        this.maxValuesPerFacet = maxValuesPerFacet;
+        return this;
+    }
+
+    public setPage(page: number) {
+        this.page = page;
+        return this;
+    }
+
+    public setFacets(facets: string[]) {
+        this.facets = facets;
+        return this;
+    }
+
+    public setTagFilters(tagFilters: string) {
+        this.tagFilters = tagFilters;
+        return this;
+    }
+
+    public setFacetFilters(facetFilters: Array<string | string[]>) {
+        this.facetFilters = facetFilters;
+        return this;
+    }
+
+    public setFilters(filters: string) {
+        this.filters = filters;
+        return this;
+    }
+
+    public build() {
+        return new AlgoliaSearchParams(
+            this.query,
+            this.hitsPerPage,
+            this.maxValuesPerFacet,
+            this.page,
+            this.facets,
+            this.tagFilters,
+            this.facetFilters,
+            this.filters,
+        );
+    }
+}
+
 export class AlgoliaSearchResultList {
     public results: AlgoliaSearchResult[];
 }
