@@ -1,4 +1,4 @@
-import {URL} from "url";
+import { URL } from "url";
 
 export abstract class DingtalkMessage {
     public msgtype: string;
@@ -310,7 +310,7 @@ export class FeedCardMessage extends DingtalkMessage {
 
     constructor(links: FeedCardLink[]) {
         super("feedCard");
-        this.feedCard.links = links;
+        this.feedCard = { links };
     }
 }
 
@@ -331,8 +331,8 @@ export class FeedCardMessageBuilder {
 
     public links: FeedCardLink[];
 
-    constructor(link: FeedCardLink) {
-        this.links = [link];
+    constructor() {
+        this.links = [];
     }
 
     public addLink(link: FeedCardLink) {

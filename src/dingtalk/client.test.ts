@@ -1,6 +1,6 @@
-import {URL} from "url";
-import {DingtalkRobotClient} from "./client";
-import {MarkdownMessageBuilder} from "./message";
+import { URL } from "url";
+import { DingtalkRobotClient } from "./client";
+import { MarkdownMessageBuilder } from "./message";
 
 const client = new DingtalkRobotClient(
     new URL(
