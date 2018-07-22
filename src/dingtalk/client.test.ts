@@ -10,8 +10,6 @@ const client = new DingtalkRobotClient(
     new MarkdownMessageBuilder()
         .setTitle("Robot Message")
         .setText("\n\nHello World!")
-        .setAtMobiles([])
-        .setIsAtAll(false)
         .build(),
 );
 

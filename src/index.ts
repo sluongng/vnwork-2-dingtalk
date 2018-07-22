@@ -1,10 +1,10 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import * as qs from "qs";
 import { sprintf } from "sprintf-js";
 import { URL } from "url";
-import { AlgoliaSearchParamsBuilder, AlgoliaSearchResultList } from "./algolia/model";
+import { AlgoliaSearchHit, AlgoliaSearchParamsBuilder, AlgoliaSearchResultList } from "./algolia/model";
 import { FuncCompContext, FuncCompEventTimeTrigger, IFuncCompCallBack } from "./alicloud/functionCompute";
-import { DingtalkRobotClient } from "./dingtalk/client";
+import { DingtalkRobotClient, DingTalkRobotResponse } from "./dingtalk/client";
 import { MarkdownMessageBuilder } from "./dingtalk/message";
 
 const NO_LOGO_IMG_URL = "https://i.imgur.com/VYlBoW0.png";
@@ -29,12 +29,13 @@ const JOB_TEMPLATE = `
 ---`;
 
 const DING_WEBHOOK = new URL(
-    process.env.DING_WEBHOOK_ACCESS_TOKEN || "86134fe83a80ab52bab435a9a26e8d59becc5893a71b52e072c476e16602f73f",
-    "https://oapi.dingtalk.com/robot/send?access_token=",
+    "/robot/send?access_token="
+    + (process.env.DING_WEBHOOK_ACCESS_TOKEN || "86134fe83a80ab52bab435a9a26e8d59becc5893a71b52e072c476e16602f73f"),
+    "https://oapi.dingtalk.com",
 );
 
-function handleSearchResult(response: AxiosResponse<AlgoliaSearchResultList>) {
-    const markdownText = response.data.results[0].hits
+function handleSearchResult(hitList: AlgoliaSearchHit[]) {
+    const markdownText = hitList
         .map((post) => {
             return sprintf(
                 JOB_TEMPLATE,
@@ -59,10 +60,13 @@ function handleSearchResult(response: AxiosResponse<AlgoliaSearchResultList>) {
 
     const client = new DingtalkRobotClient(DING_WEBHOOK, markdownMessage);
 
-    client.send();
+    return client.send();
 }
 
-export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContext, callback: IFuncCompCallBack): void {
+export function handler(
+    event: FuncCompEventTimeTrigger,
+    context: FuncCompContext,
+    callback: IFuncCompCallBack) {
 
     // VietnamWorks public id and key for Algolia Search Service
     const ALGOLIA_APP_ID = "JF8Q26WWUD";
@@ -70,6 +74,9 @@ export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContex
         + "YmFmODU1Y2NlZTUxZXRhZ0ZpbHRlcnM9JnVzZXJUb2tlbj1mODhjZjk3YTk0MTFmMmVkNWRmOTFkNDA5MmU5YzZhYw==";
     const ALGOLIA_HOST = "https://jf8q26wwud-dsn.algolia.net";
     const VNW_INDEX_NAME = "vnw_job_v2_35";
+
+    const COMPARISION_KEY = "jobSalary";
+    const MINIMUM_VALUE = 3000;
 
     const searchUrl = new URL("/1/indexes/*/queries", ALGOLIA_HOST);
     searchUrl.searchParams.append("x-algolia-api-key", ALGOLIA_API_KEY);
@@ -83,7 +90,7 @@ export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContex
         .setFacets(["categoryIds", "locationIds", "categories", "locations", "skills", "jobLevel", "company"])
         .setTagFilters("")
         .setFacetFilters(["locationIds:29", "categoryIds:35", ["jobLevelId:5", "jobLevelId:6", "jobLevelId:7"]])
-        .setFilters("")
+        .setFilters(COMPARISION_KEY + ">" + String(MINIMUM_VALUE))
         .build();
 
     const searchBody = {
@@ -94,9 +101,21 @@ export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContex
     };
 
     axios.post(searchUrl.toString(), searchBody)
+        .then((resp: AxiosResponse<AlgoliaSearchResultList>) => {
+            const searchHits = resp.data.results[0].hits;
+            searchHits.sort((a, b) => a[COMPARISION_KEY] - b[COMPARISION_KEY]);
+
+            return searchHits;
+        })
         .then(handleSearchResult)
-        .then(() => callback(null, "success"))
-        .catch((error) => {
+        .then((resp: DingTalkRobotResponse) => {
+            if (resp.errcode === 0) {
+                callback(null, "Success");
+            } else {
+                callback(null, "Something wrong, please try again");
+            }
+        })
+        .catch((error: AxiosError) => {
             console.error(error);
             callback(error);
         });
