@@ -10,7 +10,7 @@
             "name": "Launch current file w/ ts-node",
             "protocol": "inspector",
             "args": [
-                "${relativeFile}"
+                "src/index.test.ts"
             ],
             "cwd": "${workspaceRoot}",
             "runtimeArgs": [

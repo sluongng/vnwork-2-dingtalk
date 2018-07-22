@@ -6,11 +6,30 @@ import { URL } from "url";
 import { AlgoliaSearchParams, AlgoliaSearchResultList } from "./algolia/model";
 
 import { DingtalkRobotClient } from "./dingtalk/client";
-import { FeedCardLink, FeedCardMessageBuilder } from "./dingtalk/message";
+import { FeedCardLink, FeedCardMessageBuilder, MarkdownMessage, MarkdownMessageBuilder } from "./dingtalk/message";
 
 import { FuncCompContext, FuncCompEventTimeTrigger, IFuncCompCallBack } from "./alicloud/functionCompute";
 
-const JOB_URL_TEMPLATE = "https://www.vietnamworks.com/%d-jv/";
+const NO_LOGO_IMG_URL = "https://i.imgur.com/VYlBoW0.png";
+const JOB_TEMPLATE = `
+
+[%s](https://www.vietnamworks.com/%d-jv/)
+
+**Job Level**: %s
+
+**Company**: %s
+
+![](%s)
+
+**Salary**: %d
+
+*Min - Max*: %d - %d
+
+*Roles*: %s
+
+*Skills*: %s
+
+---`;
 
 const DING_WEBHOOK = new URL(
     "/robot/send?access_token=86134fe83a80ab52bab435a9a26e8d59becc5893a71b52e072c476e16602f73f",
@@ -18,29 +37,44 @@ const DING_WEBHOOK = new URL(
 );
 
 function handleSearchResult(response: AxiosResponse<AlgoliaSearchResultList>) {
-    const feedMessage = response.data.results[0].hits.map((post) => {
-        return new FeedCardLink(
-            post.jobTitle,
-            new URL(sprintf(JOB_URL_TEMPLATE, post.objectID)),
-            post.companyLogo,
-        );
-    }).reduce(
-        (builder: FeedCardMessageBuilder, link: FeedCardLink) => builder.addLink(link),
-        new FeedCardMessageBuilder(),
-    ).build();
+    const markdownText = response.data.results[0].hits
+        .map((post) => {
+            return sprintf(
+                JOB_TEMPLATE,
+                post.jobTitle,
+                post.objectID,
+                post.jobLevel,
+                post.company,
+                post.companyLogo ? post.companyLogo : NO_LOGO_IMG_URL,
+                post.jobSalary,
+                post.salaryMin,
+                post.salaryMax,
+                post.classifiedRoles.length > 0 ? post.classifiedRoles.join(", ") : "None",
+                post.classifiedSkills.length > 0 ? post.classifiedSkills.join(", ") : "None",
+            );
+        })
+        .reduce((acc: string, value: string) => acc.concat(value), "");
 
-    const client = new DingtalkRobotClient(DING_WEBHOOK, feedMessage);
+    const markdownMessage = new MarkdownMessageBuilder()
+        .setTitle("Hot Job Notice!")
+        .setText(markdownText)
+        .build();
+
+    const client = new DingtalkRobotClient(DING_WEBHOOK, markdownMessage);
 
     client.send();
 }
 
 export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContext, callback: IFuncCompCallBack): void {
 
-    const searchHost = new URL("https://jf8q26wwud-dsn.algolia.net/1/indexes/*/queries");
+    // VietnamWorks public id and key for Algolia Search Service
+    const ALGOLIA_APP_ID = "JF8Q26WWUD";
+    const ALGOLIA_API_KEY = "ZDQwODA4MThkYTVmODEyYWQxYmYyMmUwYzVkOWIxYzI1YzhmNDQ3ODk4OTM2NjU4OWUw"
+        + "YmFmODU1Y2NlZTUxZXRhZ0ZpbHRlcnM9JnVzZXJUb2tlbj1mODhjZjk3YTk0MTFmMmVkNWRmOTFkNDA5MmU5YzZhYw==";
 
-    // tslint:disable-next-line:max-line-length
-    searchHost.searchParams.append("x-algolia-api-key", "ZDQwODA4MThkYTVmODEyYWQxYmYyMmUwYzVkOWIxYzI1YzhmNDQ3ODk4OTM2NjU4OWUwYmFmODU1Y2NlZTUxZXRhZ0ZpbHRlcnM9JnVzZXJUb2tlbj1mODhjZjk3YTk0MTFmMmVkNWRmOTFkNDA5MmU5YzZhYw==");
-    searchHost.searchParams.append("x-algolia-application-id", "JF8Q26WWUD");
+    const searchHost = new URL("https://jf8q26wwud-dsn.algolia.net/1/indexes/*/queries");
+    searchHost.searchParams.append("x-algolia-api-key", ALGOLIA_API_KEY);
+    searchHost.searchParams.append("x-algolia-application-id", ALGOLIA_APP_ID);
 
     const searchParams = new AlgoliaSearchParams(
         "",

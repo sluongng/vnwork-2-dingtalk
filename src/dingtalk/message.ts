@@ -33,15 +33,12 @@ abstract class DingtalkAtMessageBuilder {
 
     constructor(msgType: string) {
         this.msgtype = msgType;
+        this.atMobiles = [];
+        this.isAtAll = false;
     }
 
     public setMsgType(msgType: string) {
         this.msgtype = msgType;
-        return this;
-    }
-
-    public setAtMobiles(atMobiles: string[]) {
-        this.atMobiles = atMobiles;
         return this;
     }
 

@@ -1,6 +1,6 @@
 import axios from "axios";
-import {URL} from "url";
-import {DingtalkMessage} from "./message";
+import { URL } from "url";
+import { DingtalkMessage } from "./message";
 
 export class DingtalkRobotClient<T extends DingtalkMessage> {
     public message: T;
@@ -11,7 +11,7 @@ export class DingtalkRobotClient<T extends DingtalkMessage> {
         this.message = message;
     }
 
-    public async send() {
+    public send() {
         return axios.post(this.webhookUrl.toString(), this.message)
             .then((resp) => {
                 console.log("Sent to dingtalk succeed with status: " + resp.status);
