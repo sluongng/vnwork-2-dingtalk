@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "baseUrl": "src",
+        "paths": {
+            "./src/*": [
+                "../dist/*"
+            ]
+        },
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "outDir": "./dist/",
+        "sourceMap": true,
+        "target": "es3"
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
