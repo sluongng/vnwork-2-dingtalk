@@ -8,52 +8,33 @@ import { AlgoliaSearchParams, AlgoliaSearchResultList } from "./algolia/model";
 import { DingtalkRobotClient } from "./dingtalk/client";
 import { FeedCardLink, FeedCardMessageBuilder } from "./dingtalk/message";
 
-class FuncCompCredentials {
-    public accessKeyId: string;
-    public accessKeySecret: string;
-    public securityToken: string;
-}
+import { FuncCompContext, FuncCompEventTimeTrigger, IFuncCompCallBack } from "./alicloud/functionCompute";
 
-class FuncCompFunction {
-    public name: string;
-    public handler: string;
-    public memory: number;
-    public timeout: number;
-}
+const JOB_URL_TEMPLATE = "https://www.vietnamworks.com/%d-jv/";
 
-class FuncCompService {
-    public name: string;
-    public logProject: string;
-    public logStore: string;
-}
+const DING_WEBHOOK = new URL(
+    "/robot/send?access_token=86134fe83a80ab52bab435a9a26e8d59becc5893a71b52e072c476e16602f73f",
+    "https://oapi.dingtalk.com",
+);
 
-class FuncCompContext {
-    public requestId: string;
-    public region: string;
-    public accountId: string;
+function handleSearchResult(response: AxiosResponse<AlgoliaSearchResultList>) {
+    const feedMessage = response.data.results[0].hits.map((post) => {
+        return new FeedCardLink(
+            post.jobTitle,
+            new URL(sprintf(JOB_URL_TEMPLATE, post.objectID)),
+            post.companyLogo,
+        );
+    }).reduce(
+        (builder: FeedCardMessageBuilder, link: FeedCardLink) => builder.addLink(link),
+        new FeedCardMessageBuilder(),
+    ).build();
 
-    public credentials: FuncCompCredentials;
-    public function: FuncCompFunction;
-    public service: FuncCompService;
-}
+    const client = new DingtalkRobotClient(DING_WEBHOOK, feedMessage);
 
-type IFuncCompCallBack = (error: Error, result?: any) => void;
-
-// Documentation: https://www.alibabacloud.com/help/doc-detail/70140.htm#Timer
-class FuncCompEventTimeTrigger {
-    public triggerName: string;
-    public triggerTime: string;
-    public payload: string;
+    client.send();
 }
 
 export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContext, callback: IFuncCompCallBack): void {
-
-    const JOB_URL_TEMPLATE = "https://www.vietnamworks.com/%d-jv/";
-
-    const DING_WEBHOOK = new URL(
-        "/robot/send?access_token=86134fe83a80ab52bab435a9a26e8d59becc5893a71b52e072c476e16602f73f",
-        "https://oapi.dingtalk.com",
-    );
 
     const searchHost = new URL("https://jf8q26wwud-dsn.algolia.net/1/indexes/*/queries");
 
@@ -77,26 +58,10 @@ export function handler(event: FuncCompEventTimeTrigger, context: FuncCompContex
             indexName: "vnw_job_v2_35",
             params: qs.stringify(searchParams),
         }],
-    }).then((response: AxiosResponse<AlgoliaSearchResultList>) => {
-
-        const feedMessage = response.data.results[0].hits.map((post) => {
-            return new FeedCardLink(
-                post.jobTitle,
-                new URL(sprintf(JOB_URL_TEMPLATE, post.objectID)),
-                post.companyLogo,
-            );
-        }).reduce(
-            (builder: FeedCardMessageBuilder, link: FeedCardLink) => builder.addLink(link),
-            new FeedCardMessageBuilder(),
-        ).build();
-
-        const client = new DingtalkRobotClient(DING_WEBHOOK, feedMessage);
-
-        client.send();
-
-        callback(null, "success");
-    }).catch((error) => {
-        console.error(error);
-        callback(error);
-    });
+    }).then(handleSearchResult)
+        .then(() => callback(null, "success"))
+        .catch((error) => {
+            console.error(error);
+            callback(error);
+        });
 }
