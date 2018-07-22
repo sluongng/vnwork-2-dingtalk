@@ -17,7 +17,7 @@ Project was built based on https://github.com/sluongng/alicloud-fc-ts-template u
 ## Screenshot
 
 <p align="center">
-    ![](https://i.imgur.com/rAFg28R.png)
+  <img width="221" height="544" src="https://i.imgur.com/rAFg28R.png">
 </p>
 
 ## Disclaimer
