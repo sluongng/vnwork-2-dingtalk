@@ -1,4 +1,4 @@
 triggerConfig:
     payload: "time-triggered"
-    cronExpression: "0 0 7 ? * *"
+    cronExpression: "0 0 14 ? * *"
     enable: true
