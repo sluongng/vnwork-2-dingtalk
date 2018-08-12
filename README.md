@@ -12,7 +12,7 @@ Project was built based on https://github.com/sluongng/alicloud-fc-ts-template u
     Here we aim to highlight these information.
     To find out more on what kind of information is available, read [This](https://github.com/sluongng/vnwork-2-dingtalk/blob/master/src/algolia/model.ts#L121)
 
-2. Its convinience for me to receive notification via DingTalk.
+2. Its convenience for me to receive notification via DingTalk.
 
 ## How?
 
